@@ -7,7 +7,7 @@ const TodoItem = ({item, remove, check}) => {
   const{id, title, done} = item;
   return (
     <li className='todo-list-item'>
-        <div className={cn('check-circle', {active: done})} onClick={() => check(id)}>
+        <div className={cn('check-circle', {active: done})} onClick={() => check(id, done)}>
             {done && <MdDone />}
         </div>
         <span className={cn('text', {finish: done})}>{title}</span>
