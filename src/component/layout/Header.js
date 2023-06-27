@@ -1,28 +1,33 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import {AppBar, Toolbar, Grid, 
     Typography, Button} from "@mui/material";
 import './header.css'
 import { Link, useNavigate } from 'react-router-dom';
 
 import { isLogin, getLoginUserInfo } from '../../util/login-utils';
+import { AuthContext } from '../../util/AuthContext';
 
 const Header = () => {
     const redirection = useNavigate();
 
-    const [userInfo, setUserInfo] = useState({});
+    // const [userInfo, setUserInfo] = useState({});
 
-    const { token, username, role } = userInfo;
+    // const { token, username, role } = userInfo;
+
+    //AuthContext에서 로그인 상태와 onLogout 함수를 가져오기
+    const {isLoggedIn, onLogout, userName} = useContext(AuthContext);
 
     //로그아웃 핸들러
     const logoutHandler = e => {
-        localStorage.clear();
-        redirection('/');
+        // AuthContext의 onLogout 함수를 호출하여 로그인 상태를 업데이트한다.
+        onLogout();
+        redirection('/login');
     }
 
-
-    useEffect(() => {
-        setUserInfo(getLoginUserInfo());
-    }, []);
+    // 무한루프작동하여 주석처리.
+    // useEffect(() => {
+    //     setUserInfo(getLoginUserInfo());
+    // }, [userInfo]);
 
     return (
         <AppBar position="fixed" style={{
@@ -40,7 +45,7 @@ const Header = () => {
                         }>
                             <Typography variant="h4">
                                 {
-                                    isLogin() ? username + '님' : '오늘'
+                                    isLoggedIn ? userName + '님' : '오늘'
                                 }
                                 의 할일
                             </Typography>   
