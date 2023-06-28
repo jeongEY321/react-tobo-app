@@ -1,15 +1,33 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState, useRef } from 'react'
 import {Button, Container, Grid,
     TextField, Typography, Link} from "@mui/material";
 
 //리다이렉트 사용하기
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL as BASE, USER } from '../../config/host-config';
+import { AuthContext } from '../../util/AuthContext';
+import CustomSnackBar from '../layout/CustomSnackBar';
+
+import './Join.scss';
 
 const Join = () => {
 
+    //useRef로 태그 참조하기
+    const $fileTag = useRef();
+
     //리다이렉트 사용하기
     const redirection = useNavigate();
+    const { isLoggedIn } = useContext(AuthContext);
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        if(isLoggedIn) {
+            setOpen(true);
+            setTimeout(() => {
+                redirection('/');
+            }, 3000);
+        }
+    }, [isLoggedIn, redirection]);
 
     const API_BASE_URL = BASE + USER;
 
@@ -200,6 +218,23 @@ const Join = () => {
             flag
         });
     };
+
+    // 이미지 파일 상태변수
+    const [imgFile, setImgFile] = useState(null);
+
+    // 이미파일을 선택했을 때 썸네일 뿌리기
+    const showThumbnailHandler = e => {
+        //첨부된 파일 정보
+        const file = $fileTag.current.files[0];
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+
+        reader.onloadend = () => {
+            setImgFile(reader.result);
+        }
+
+    };
  
     //4개의 입력칸이 모두 검증에 통과했는지 여부를 검사
     const isValid = () =>{
@@ -212,10 +247,22 @@ const Join = () => {
 
     //회원 가입 처리 서버요청
     const fetchSignUpPost = () =>{
+
+        // JSON을 Blob타입으로 변경 후 FormData에 넣기
+        const userJsonBlob = new Blob(
+            [JSON.stringify(userValue)],
+            {type: 'application/json'}
+        );
+
+        // 이미지파일과 회원정보 JSON을 하나로 묶어야 함
+        // FormData 객체를 활용.
+        const userFormData = new FormData();
+        userFormData.append('user', userJsonBlob);
+        userFormData.append('profileImage', $fileTag.current.files[0]);
+
         fetch(API_BASE_URL,{
             method:'POST',
-            headers:{'content-type':'application/json'},
-            body:JSON.stringify(userValue)
+            body:userFormData
         })
         .then(res => {
             if(res.status === 200){
@@ -248,108 +295,134 @@ const Join = () => {
 
 
     return (
-        <Container component="main" maxWidth="xs" style={{ margin: "200px auto" }}>
-            <form noValidate>
-                <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                        <Typography component="h1" variant="h5">
-                            계정 생성
-                        </Typography>
+        <>
+            {!isLoggedIn &&
+            <Container component="main" maxWidth="xs" style={{ margin: "200px auto" }}>
+                <form noValidate>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                            <Typography component="h1" variant="h5">
+                                계정 생성
+                            </Typography>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <div className="thumbnail-box" >
+                                <img
+                                    //src={require("../../assets/img/image-add.png")}
+                                    src={imgFile ? imgFile : require("../../assets/img/image-add.png")}
+                                    alt="profile"
+                                    onClick={() => $fileTag.current.click()}
+                                />
+                            </div>
+                            <label className='signup-img-label' htmlFor='profile-img'>프로필 이미지 추가</label>
+                            <input
+                                id='profile-img'
+                                type='file'
+                                style={{display: 'none'}}
+                                accept='image/*'
+                                ref={$fileTag}
+                                onChange={showThumbnailHandler}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <TextField
+                                autoComplete="fname"
+                                name="username"
+                                variant="outlined"
+                                required
+                                fullWidth
+                                id="username"
+                                label="유저 이름"
+                                autoFocus
+                                onChange={nameHandler}
+                            />
+                            <span style ={
+                                correct.userName ?
+                                {color:'green'}
+                                :{color:'red'}
+                            }>{message.userName}</span>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                variant="outlined"
+                                required
+                                fullWidth
+                                id="email"
+                                label="이메일 주소"
+                                name="email"
+                                autoComplete="email"
+                                onChange={emailHandler}
+                            />
+                            <span style ={
+                                correct.email ?
+                                {color:'green'}
+                                :{color:'red'}
+                            }>{message.email}</span>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                variant="outlined"
+                                required
+                                fullWidth
+                                name="password"
+                                label="패스워드"
+                                type="password"
+                                id="password"
+                                autoComplete="current-password"
+                                onChange={passwordHandler}
+                            />
+                            <span style ={
+                                correct.password ?
+                                {color:'green'}
+                                :{color:'red'}
+                            }>{message.password}</span>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                variant="outlined"
+                                required
+                                fullWidth
+                                name="password-check"
+                                label="패스워드 확인"
+                                type="password"
+                                id="password-check"
+                                autoComplete="check-password"
+                                onChange={pwCheckHandler}
+                            />
+                            <span id='check-span' style ={
+                                correct.passwordCheck ?
+                                {color:'green'}
+                                :{color:'red'}
+                            }>{message.passwordCheck}</span>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Button
+                              type="submit"
+                              fullWidth
+                              variant="contained"
+                              style={{background: '#38d9a9'}}
+                              onClick={joinButtonClickHandler}
+                            >
+                                계정 생성
+                            </Button>
+                        </Grid>
                     </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            autoComplete="fname"
-                            name="username"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            id="username"
-                            label="유저 이름"
-                            autoFocus
-                            onChange={nameHandler}
-                        />
-                        <span style ={
-                            correct.userName ? 
-                            {color:'green'}
-                            :{color:'red'}
-                        }>{message.userName}</span>
+                    <Grid container justify="flex-end">
+                        <Grid item>
+                            <Link href="/login" variant="body2">
+                                이미 계정이 있습니까? 로그인 하세요.
+                            </Link>
+                        </Grid>
                     </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            variant="outlined"
-                            required
-                            fullWidth
-                            id="email"
-                            label="이메일 주소"
-                            name="email"
-                            autoComplete="email"
-                            onChange={emailHandler}
-                        />
-                        <span style ={
-                            correct.email ? 
-                            {color:'green'}
-                            :{color:'red'}
-                        }>{message.email}</span>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            variant="outlined"
-                            required
-                            fullWidth
-                            name="password"
-                            label="패스워드"
-                            type="password"
-                            id="password"
-                            autoComplete="current-password"
-                            onChange={passwordHandler}
-                        />
-                        <span style ={
-                            correct.password ? 
-                            {color:'green'}
-                            :{color:'red'}
-                        }>{message.password}</span>
-                    </Grid>
-    
-                    <Grid item xs={12}>
-                        <TextField
-                            variant="outlined"
-                            required
-                            fullWidth
-                            name="password-check"
-                            label="패스워드 확인"
-                            type="password"
-                            id="password-check"
-                            autoComplete="check-password"
-                            onChange={pwCheckHandler}
-                        />
-                        <span id='check-span' style ={
-                            correct.passwordCheck ? 
-                            {color:'green'}
-                            :{color:'red'}
-                        }>{message.passwordCheck}</span>
-                    </Grid>
-    
-                    <Grid item xs={12}>
-                        <Button 
-                          type="submit" 
-                          fullWidth 
-                          variant="contained" 
-                          style={{background: '#38d9a9'}}
-                          onClick={joinButtonClickHandler}
-                        >
-                            계정 생성
-                        </Button>
-                    </Grid>
-                </Grid>
-                <Grid container justify="flex-end">
-                    <Grid item>
-                        <Link href="/login" variant="body2">
-                            이미 계정이 있습니까? 로그인 하세요.
-                        </Link>
-                    </Grid>
-                </Grid>
-            </form>
-        </Container>
+                </form>
+            </Container>
+            }
+            <CustomSnackBar 
+                open={open}
+            />
+        </>
       );
 }
 
